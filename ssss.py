@@ -2048,7 +2048,7 @@ def dashboard_page():
             )
         except Exception as e:
             st.error(f"Error generating CSV: {e}")
-        )
+        
 
 def customer_balance_page():
     st.markdown('<div class="section-title">👤 Customer Balances</div>', unsafe_allow_html=True)
@@ -2452,3 +2452,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
