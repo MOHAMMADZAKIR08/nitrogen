@@ -1,5 +1,48 @@
 # ... (previous code unchanged)
 
+def edit_entry_form(df, index, entry_type):
+    st.write(f"### Edit {entry_type.title()} Entry")
+    edited = {}
+    for col in df.columns:
+        # Use number input for known numeric columns, text otherwise
+        if df[col].dtype in ['float64', 'int64']:
+            edited[col] = st.number_input(f"{col}", value=float(df.loc[index, col]), key=f"{entry_type}_{col}_{index}")
+        elif "date" in col.lower():
+            edited[col] = st.date_input(f"{col}", value=pd.to_datetime(df.loc[index, col]).date(), key=f"{entry_type}_{col}_{index}")
+        else:
+            edited[col] = st.text_input(f"{col}", value=str(df.loc[index, col]), key=f"{entry_type}_{col}_{index}")
+    if st.button(f"Save {entry_type.title()} Edit", key=f"save_{entry_type}_{index}"):
+        for col in df.columns:
+            df.at[index, col] = edited[col]
+        st.success(f"{entry_type.title()} entry updated.")
+        st.session_state[f"edit_{entry_type}_{index}"] = False
+
+def show_editable_table(df, session_key, entry_type):
+    st.write(f"### {entry_type.title()} Entries")
+    if df.empty:
+        st.info(f"No {entry_type} entries to display.")
+        return
+
+    for idx, row in df.iterrows():
+        cols = st.columns([5, 1, 1])
+        with cols[0]:
+            st.write(row.to_dict())
+        with cols[1]:
+            if st.button("Edit", key=f"edit_{entry_type}_{idx}"):
+                st.session_state[f"edit_{entry_type}_{idx}"] = True
+        with cols[2]:
+            if st.button("Delete", key=f"delete_{entry_type}_{idx}"):
+                # Remove the entry and reset indices
+                df.drop(idx, inplace=True)
+                df.reset_index(drop=True, inplace=True)
+                st.session_state[session_key] = df
+                st.success(f"{entry_type.title()} entry deleted.")
+                st.experimental_rerun()
+        if st.session_state.get(f"edit_{entry_type}_{idx}", False):
+            edit_entry_form(df, idx, entry_type)
+            if st.button("Cancel", key=f"cancel_{entry_type}_{idx}"):
+                st.session_state[f"edit_{entry_type}_{idx}"] = False
+
 def dashboard_page():
     st.markdown('<div class="section-title">📊 Dashboard Overview</div>', unsafe_allow_html=True)
     
@@ -62,7 +105,7 @@ def dashboard_page():
         st.markdown(f"""
         <div class="metric-card">
             <h3>Today's Sales</h3>
-            <p style="font-size: 1.5rem; font-weight: bold; color: #a442f5;">{today_sales:,.0f} PKR</p>
+            <p style=\"font-size: 1.5rem; font-weight: bold; color: #a442f5;\">{today_sales:,.0f} PKR</p>
         </div>
         """, unsafe_allow_html=True)
     with col2:
@@ -70,14 +113,14 @@ def dashboard_page():
         st.markdown(f"""
         <div class="metric-card">
             <h3>Today's Profit</h3>
-            <p class="{profit_style}" style="font-size: 1.5rem; font-weight: bold;">{today_profit:,.0f} PKR</p>
+            <p class=\"{profit_style}\" style=\"font-size: 1.5rem; font-weight: bold;\">{today_profit:,.0f} PKR</p>
         </div>
         """, unsafe_allow_html=True)
     with col3:
         st.markdown(f"""
         <div class="metric-card">
             <h3>Today's Expenditure</h3>
-            <p style="font-size: 1.5rem; font-weight: bold; color: #a442f5;">{today_expenditure:,.0f} PKR</p>
+            <p style=\"font-size: 1.5rem; font-weight: bold; color: #a442f5;\">{today_expenditure:,.0f} PKR</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -89,7 +132,7 @@ def dashboard_page():
         st.markdown(f"""
         <div class="metric-card">
             <h3>Total Sales</h3>
-            <p style="font-size: 1.5rem; font-weight: bold; color: #a442f5;">{total_sales:,.0f} PKR</p>
+            <p style=\"font-size: 1.5rem; font-weight: bold; color: #a442f5;\">{total_sales:,.0f} PKR</p>
         </div>
         """, unsafe_allow_html=True)
     with col5:
@@ -97,14 +140,14 @@ def dashboard_page():
         st.markdown(f"""
         <div class="metric-card">
             <h3>Total Profit</h3>
-            <p class="{profit_style}" style="font-size: 1.5rem; font-weight: bold;">{total_profit:,.0f} PKR</p>
+            <p class=\"{profit_style}\" style=\"font-size: 1.5rem; font-weight: bold;\">{total_profit:,.0f} PKR</p>
         </div>
         """, unsafe_allow_html=True)
     with col6:
         st.markdown(f"""
         <div class="metric-card">
             <h3>Total Expenditure</h3>
-            <p style="font-size: 1.5rem; font-weight: bold; color: #a442f5;">{total_expenditure:,.0f} PKR</p>
+            <p style=\"font-size: 1.5rem; font-weight: bold; color: #a442f5;\">{total_expenditure:,.0f} PKR</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -117,21 +160,21 @@ def dashboard_page():
         st.markdown(f"""
         <div class="metric-card">
             <h3>Pending Payments</h3>
-            <p style="font-size: 1.5rem; font-weight: bold; color: #FF9800;">{pending_payments:,.0f} PKR</p>
+            <p style=\"font-size: 1.5rem; font-weight: bold; color: #FF9800;\">{pending_payments:,.0f} PKR</p>
         </div>
         """, unsafe_allow_html=True)
     with col8:
         st.markdown(f"""
         <div class="metric-card">
             <h3>Mobile Sales</h3>
-            <p style="font-size: 1.5rem; font-weight: bold; color: #a442f5;">{mobile_sales:,.0f} PKR</p>
+            <p style=\"font-size: 1.5rem; font-weight: bold; color: #a442f5;\">{mobile_sales:,.0f} PKR</p>
         </div>
         """, unsafe_allow_html=True)
     with col9:
         st.markdown(f"""
         <div class="metric-card">
             <h3>Accessories Sales</h3>
-            <p style="font-size: 1.5rem; font-weight: bold; color: #a442f5;">{accessories_sales:,.0f} PKR</p>
+            <p style=\"font-size: 1.5rem; font-weight: bold; color: #a442f5;\">{accessories_sales:,.0f} PKR</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -160,6 +203,13 @@ def dashboard_page():
             st.error(f"Error creating profit chart: {e}")
     else:
         st.info("No sales data available for daily analysis.")
+    
+    # Editable tables for transactions and expenditures
+    st.markdown("---")
+    if 'transactions' in st.session_state and not st.session_state.transactions.empty:
+        show_editable_table(st.session_state.transactions, "transactions", "transaction")
+    if 'expenditures' in st.session_state and not st.session_state.expenditures.empty:
+        show_editable_table(st.session_state.expenditures, "expenditures", "expenditure")
     
     # Add download report button
     st.markdown("---")
